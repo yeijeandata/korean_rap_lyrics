@@ -120,11 +120,15 @@ def generate_en_map():
 
 
 ######################
+from PIL import Image
 import base64
 from io import BytesIO
-import plotly.graph_objects as go
-from PIL import Image
-import numpy as np
+
+def resize_image(image_path, max_size=(500, 500)):
+    """ 이미지 크기를 최대한 제한된 크기로 리사이즈 """
+    with Image.open(image_path) as img:
+        img.thumbnail(max_size)  # 이미지를 max_size 크기로 축소
+        return img
 
 def generate_en_map_plotly():
     # 데이터 불러오기 (en_data가 이미 정의되었다고 가정)
@@ -133,6 +137,8 @@ def generate_en_map_plotly():
     
     fig = go.Figure()
 
+    image_size = (50, 50)  # 원형 이미지 크기 설정
+    max_image_size = (500, 500)  # 이미지 리사이징 최대 크기 설정
 
     # 이미지 삽입
     for i in range(len(x)):
@@ -141,22 +147,22 @@ def generate_en_map_plotly():
         else:
             image_path = f"photo/{en_data['artist_name'][i]}.jpg"
 
-        img = Image.open(image_path)
-        image_size = (100, 100)
+        # 이미지 리사이징
+        img = resize_image(image_path, max_size=max_image_size)
+        img = img.resize(image_size, Image.Resampling.LANCZOS)  # 이미지 크기 변경
 
-        img = Image.open(image_path)
-        img = img.resize(image_size, Image.Resampling.LANCZOS)
-
-        mask = Image.new('L', image_size, 0)
+        # 이미지를 원형으로 자르기
+        mask = Image.new('L', image_size, 0)  # 'L' 모드는 흑백 이미지
         draw = ImageDraw.Draw(mask)
-        draw.ellipse((0, 0, image_size[0], image_size[1]), fill=255)
+        draw.ellipse((0, 0, image_size[0], image_size[1]), fill=255)  # 원형 그리기
 
-        img.putalpha(mask)
+        # 원형 마스크를 이미지에 적용
+        img.putalpha(mask)  # alpha 채널을 적용하여 원형 이미지 생성
 
         # 이미지를 base64로 변환
         buffered = BytesIO()
         img.save(buffered, format="PNG")  # 이미지를 PNG 형식으로 저장
-        img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')  # base64 인코딩
+        img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')  # base64로 변환
 
         # 해당 위치에 이미지 추가
         fig.add_trace(go.Scatter(
@@ -196,7 +202,7 @@ def generate_en_map_plotly():
         font=dict(family="NanumSquareRoundB", size=14),
         showlegend=False,
         plot_bgcolor="white",
-        height=2000,  # 그래프의 높이 설정
+        height=1200,  # 그래프의 높이 설정
         width=1200,   # 그래프의 너비 설정
     )
 
@@ -206,4 +212,3 @@ def generate_en_map_plotly():
 
     # 그래프 출력
     return fig
-
