@@ -26,9 +26,8 @@ def make_list (df, column):
 
 def generate_en_wordcloud(name, word_counter): # 단어빈도수, 제목, 색상맵
     import numpy as np
-    font_path = 'c:/windows/fonts/malgun.ttf' # 한글 폰트 경로
-    base_dir = os.path.dirname(os.path.abspath(__file__))  # 현재 스크립트 위치
-    mask_path = os.path.join(base_dir, "photo", "mask.png")  # 상대 경로 사용
+    font_path = 'font/NanumSquareRoundB.ttf' # 한글 폰트 경로
+    mask_path = "photo/mask.png"  # 상대 경로 사용
     mask_image = np.array(Image.open(mask_path))
 
     # Counter 객체를 딕셔너리로 변환
