@@ -5,7 +5,6 @@ import pandas as pd
 from PIL import Image
 from collections import abc
 import numpy as np
-import os
 
 ##################################################################################
 with open('analysis/고빈도_영어단어_200.txt', 'r', encoding='utf-8') as file:
