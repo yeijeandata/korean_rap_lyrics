@@ -70,7 +70,7 @@ def generate_en_map():
     x = en_data['unique_words_ratio']
     y = en_data['bad_words_ratio']
 
-    fig_en = plt.figure(figsize=(20, 20))  # 👈 plt.figure() 명시적으로 생성
+    fig_en = plt.figure(figsize=(30, 30))  # 👈 plt.figure() 명시적으로 생성
 
     ax = fig_en.add_subplot(111)
 
