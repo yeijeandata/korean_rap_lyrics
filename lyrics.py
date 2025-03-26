@@ -188,7 +188,7 @@ def main():
             st.session_state.show_all_artists = False  # 텍스트가 처음엔 안 보이게 설정
 
         # 버튼 클릭 시 상태 토글
-        if st.button(f"검색할 수 있는 가수 보기", key=f"show_all_artists"):
+        if st.button(f"검색할 수 있는 가수 보기", key=f"show_all_artists_button"):
             st.session_state.show_all_artists = not st.session_state.show_all_artists  # 상태 반전
 
         # 상태에 따라 텍스트 표시
