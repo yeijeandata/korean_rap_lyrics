@@ -8,9 +8,9 @@ from collections import abc
 
 
 # CSV 파일 로드
-artist = pd.read_csv('analysis\\artist.csv')
-en_data = pd.read_csv('analysis\\영어_가사_토큰화.csv')
-ko_data = pd.read_csv('analysis\\한글_가사_토큰화.csv')
+artist = pd.read_csv('analysis/artist.csv')
+en_data = pd.read_csv('analysis/영어_가사_토큰화.csv')
+ko_data = pd.read_csv('analysis/한글_가사_토큰화.csv')
 
 en_means = {
 'unique_words_ratio' : en_data['unique_words_ratio'].mean(),
@@ -184,7 +184,6 @@ def main():
 
             # 가수 이름 검색 (대소문자 구분 없이)
             find_artist = artist[artist['artist_name'].str.upper() == st.session_state.input_artist]
-            print(find_artist)
             if not find_artist.empty:
                 st.title(f"✨{st.session_state.input_artist}의 정보")
                 
@@ -201,7 +200,6 @@ def main():
                     name = str ( find_artist_similar['artist_name'].to_list() )
                     name = name[2:-2]
                     st.title(f"✨{name}의 정보")
-
                     print_data(name)
                     
                 else:
