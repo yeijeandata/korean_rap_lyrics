@@ -53,5 +53,69 @@ def generate_en_wordcloud(name, word_counter): # 단어빈도수, 제목, 색상
     plt.axis("off")  # 축 제거
     st.pyplot(plt)
 
+############################################################################
+
+import matplotlib.pyplot as plt
+import numpy as np
+import matplotlib.image as mpimg
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from PIL import Image, ImageDraw  # Pillow를 사용해서 이미지 크기 조정
+from matplotlib import font_manager, rc
+
+def generate_en_map():
+    font_path = 'font/NanumSquareRoundB.ttf'  # Windows 예시
+    font_prop = font_manager.FontProperties(fname=font_path)
+    rc('font', family=font_prop.get_name())
+
+    # 예시 데이터 (x, y 좌표)
+    x = en_data['unique_words_ratio']
+    y = en_data['bad_words_ratio']
+
+    # 그림 크기 설정
+    fig_en, ax = plt.subplots(figsize=(20, 20))
+
+    # 이미지 크기 고정
+    image_size = (50, 50)
+
+    # 산점도 그리기
+    ax.scatter(x, y)
+
+    # 각 점에 얼굴 이미지를 표시
+    for i in range(len(x)):
+        # 각 이미지 로드
+        if en_data['artist_name'][i] == 'NO:EL':
+            image_path = "photo/NOEL.jpg"
+        else:
+            image_path = f"photo/{en_data['artist_name'][i]}.jpg"
+
+        img = Image.open(image_path) # 이미지 로드
+        img = img.resize(image_size, Image.Resampling.LANCZOS)  # 최신 리사이징 옵션
+
+        # 이미지를 원형으로 만들기 위한 마스크 생성
+        mask = Image.new('L', image_size, 0)  # 'L' 모드는 흑백 (0은 검은색, 255는 흰색)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0, image_size[0], image_size[1]), fill=255)  # 원형 그리기
+
+        # 원형 마스크를 이미지에 적용
+        img.putalpha(mask)  # 이미지에 마스크 적용 (알파 채널로 원형 부분만 보이게)
+        img = img.convert("RGBA") # 이미지를 RGB로 변환 (알파 채널 제거)
+        img_arr = np.array(img)
+
+        # 알파 채널을 이용해 투명한 배경을 만들기
+        img_arr[:, :, 3] = img_arr[:, :, 3] * (img_arr[:, :, 3] > 0)
+
+        # 이미지 크기 조정
+        imagebox = OffsetImage(img, zoom=1, resample= True)  # zoom 값으로 크기 조절 (0.05 정도가 적당)
+        
+        # 이미지 배치
+        ab = AnnotationBbox(imagebox, (x[i], y[i]), frameon=False)  # frameon=False로 테두리 제거
+        ax.add_artist(ab)
+
+        # 가수 이름을 이미지 위에 텍스트로 표시
+        ax.text(x[i], y[i] + 2.6, en_data['artist_name'][i], ha='center', fontsize=10, color='black')
+
+    ax.set_xlabel('고유 단어 비율')
+    ax.set_ylabel('욕설 횟수')
+    return(fig_en)
 
 
