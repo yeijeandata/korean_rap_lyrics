@@ -13,25 +13,20 @@ with open('analysis/고빈도_영어단어_200.txt', 'r', encoding='utf-8') as f
 en_common_words = [ word.strip() for word in content.split() ]
 
 ##################################################################################
-artist = pd.read_csv('analysis\\artist.csv')
-en_data = pd.read_csv('analysis\\영어_가사_토큰화.csv')
-ko_data = pd.read_csv('analysis\\한글_가사_토큰화.csv')
-
+artist = pd.read_csv('analysis/artist.csv')
+en_data = pd.read_csv('analysis/영어_가사_토큰화.csv')
+ko_data = pd.read_csv('analysis/한글_가사_토큰화.csv')
 
 def make_list (df, column): 
-    import ast
-    for i in range(len(df)):
-        try:
-            # 문자열로 된 리스트를 literal_eval로 처리
-            df[column][i] = ast.literal_eval(df[column][i])
-        except (ValueError, SyntaxError):
-            # 만약 literal_eval이 실패하면, 수동으로 처리
-            df[column][i] = df[column][i].strip("[]").replace("'", "").split(", ")
+    tokenized_lyrics = []
+    for text in df[column]:
+        word_list = [  word.strip() for word in text.split() if len(word.strip())>=2]
+        tokenized_lyrics.append(word_list)
 
 def generate_en_wordcloud(name, word_counter): # 단어빈도수, 제목, 색상맵
     import numpy as np
-    font_path = 'c:\\windows\\fonts\\malgun.ttf' # 한글 폰트 경로
-    mask_image = np.array(Image.open("C:\\Users\\itwill\\lyrics_project\\photo\\mask.png"))
+    font_path = 'c:/windows/fonts/malgun.ttf' # 한글 폰트 경로
+    mask_image = np.array(Image.open("C:/Users/itwill/lyrics_project/photo/mask.png"))
 
     # Counter 객체를 딕셔너리로 변환
     word_freq = dict(word_counter)
@@ -61,8 +56,8 @@ def generate_en_wordcloud(name, word_counter): # 단어빈도수, 제목, 색상
 
 def generate_en_wordcloud(name, word_counter): # 단어빈도수, 제목, 색상맵
 
-    font_path = 'c:\\windows\\fonts\\malgun.ttf' # 한글 폰트 경로
-    mask_image = np.array(Image.open("C:\\Users\\itwill\\lyrics_project\\photo\\mask.png"))
+    font_path = 'c:/windows/fonts/malgun.ttf' # 한글 폰트 경로
+    mask_image = np.array(Image.open("C:/Users/itwill/lyrics_project/photo/mask.png"))
 
     # Counter 객체를 딕셔너리로 변환
     word_freq = dict(word_counter)
