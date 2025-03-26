@@ -5,3 +5,4 @@ numpy
 plotly
 pillow
 wordcloud
+os
