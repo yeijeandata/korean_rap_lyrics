@@ -5,7 +5,14 @@ import numpy as np
 import pandas as pd
 from PIL import Image
 from collections import abc
+import matplotlib.image as mpimg
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from PIL import Image, ImageDraw  # Pillow를 사용해서 이미지 크기 조정
+from matplotlib import font_manager, rc
 
+font_path = 'font/NanumSquareRoundB.ttf'  # Windows 예시
+font_prop = font_manager.FontProperties(fname=font_path)
+rc('font', family=font_prop.get_name())
 
 # CSV 파일 로드
 artist = pd.read_csv('analysis/artist.csv')
