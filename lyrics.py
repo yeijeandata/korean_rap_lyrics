@@ -228,6 +228,7 @@ def main():
 
             # 그래프 생성
             st.title("모든 래퍼 데이터")
-            st.pyplot(functions.generate_en_map())
+            fig_en = functions.generate_en_map()  # 함수 실행 후 figure 리턴 받기
+            st.pyplot(fig_en)
 
 main()
