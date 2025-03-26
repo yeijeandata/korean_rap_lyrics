@@ -29,7 +29,7 @@ en_stop_words = functions.en_common_words + ['hola', 'hoho', 'holla', 'leessang'
 
 
 # 페이지 제목
-st.title("국내 래퍼 가사 분석")
+st.title("🎵 국내 래퍼 가사 분석")
 
 # 부제목
 st.header("최신 30곡에 기반한 분석을 제공합니다")
@@ -41,8 +41,6 @@ def print_data(name):
     index = artist['artist_name'].str.find(name)
 
     en = en_data [index != -1]
-
-
 
     from collections import Counter
     import plotly.express as px
@@ -62,26 +60,41 @@ def print_data(name):
             en_bad_words = []
             en_top_badwords = []
     
+    fig_en1, fig_en2, fig_en3 = functions.get_three_graph(en, name)
     ###############################################################################################
     ###############################################################################################
 
-    st.write(f"113명의 래퍼를 분석한 결과 한 곡에 평균 { int(en_means['words_cnt']) }개의 영어 단어를 사용합니다.")
-    st.write(f"{name}은(는) 한 곡에 평균 { int(en['words_cnt'].iloc[0]/30) }개의 영어 단어를 사용합니다.")
+    col1, col2, col3 = st.columns(3)
+    with col1:
+        st.plotly_chart(fig_en1)
+        st.subheader("🎵 곡당 사용 단어 수")
+        st.write(f"➡️ {name}은(는) 한 곡에 평균 { int(en['words_cnt'].iloc[0]/30) }개의 영어 단어를 사용.")
+        st.write(f"➡️ 113명의 래퍼를 분석한 결과 한 곡에 평균 { int(en_means['words_cnt']) }개의 영어 단어를 사용")
+        
 
-    fig1 = px.bar ( x = [name, '평균'], y = [  int(en['words_cnt'].iloc[0]/30) , int(en_means['words_cnt'])] , 
-                   title = '한 곡의 평균 영어 단어 수', color=['blue','skyblue'])
-    # x축, y축 레이블 추가
-    fig1.update_layout(
-        xaxis_title=f"{name}과 래퍼 113인 평균의 비교",
-        yaxis_title="한 곡의 평균 영어 단어 수",
-        bargap=0.5
-    )
-    st.plotly_chart(fig1)
+    with col2:
+        st.plotly_chart(fig_en2)
+        st.subheader("🎵 흔하지 않은 단어 비율")
+        st.write(f"➡️ {name}의 고유한 영어 단어 비율: {en['unique_words_ratio'].iloc[0]*100:.1f}% ({ int(en['unique_words_rank'].iloc[0])}위)")
+        st.write( f"➡️ 113명의 래퍼는 평균적으로 가사에 쓴 단어 중 {en_means['unique_words_ratio']*100:.1f}%가 고유한 단어")
 
+    with col3:
+        st.plotly_chart(fig_en3)   
+        st.subheader("🎵 비속어 비율")
+        st.write(f"➡️ {name}의 영어 단어 중 욕설의 비율: {en['bad_words_ratio'].iloc[0]*100:.1f}% ({ int( en['bad_words_rank'].iloc[0]) })")
+
+        # 사용한 비속어가 있다면 출력
+        if len ( en_top_badwords ) == 0:
+            st.write(f"➡️ {name}은(는) 최근 30곡에서 영어 비속어를 사용하지 않았습니다.")
+        else:
+            st.write(f"➡️ {name}가(이) 사용한 영어 비속어")
+            st.write(f": {', '.join(en_top_badwords)}")
+  
     st.divider()
 
     #############고 유 단 어 분 석 ################################################################
 
+    st.header("🎵 공통적으로 흔하게 사용한 단어")
     st.write(f"113명의 래퍼를 분석한 결과 가장 흔하게 사용한 20개의 영어 단어는 다음과 같습니다.")
     st.write(f"{ ', '.join(functions.en_common_words[:20])}")
 
@@ -98,7 +111,7 @@ def print_data(name):
     else:
         pass
 
-    
+    st.header(f"🎵 {name}의 단어")
     st.write(f"공통적으로 흔하게 사용한 200개의 영어 단어를 제외하고")
     st.write(f"{name}가(이) 고유하게 사용한 단어 중 빈도수 상위 20개 단어는 다음과 같습니다.")
     st.write(f"{', '.join(en_top_words[:20])}")
@@ -115,48 +128,19 @@ def print_data(name):
         st.write( f"{', '.join(en_top_words)}")
     else:
         pass
+
     st.divider()
 
-    #############고 유 단 어 비 율 분 석 ################################################################
-    st.write(f"➡️{name}의 고유한 영어 단어 비율: {en['unique_words_ratio'].iloc[0]*100:.1f}% ({ int(en['unique_words_rank'].iloc[0])}위)")
-    st.write( f"113명의 래퍼는 평균적으로 가사에 쓴 단어 중 {en_means['unique_words_ratio']*100:.1f}%가 고유한 단어입니다.")
-    st.write("")
-
-    ##############
-
-    fig2 = px.bar ( x = [name, '평균'], y = [  en['unique_words_ratio'].iloc[0]*100 , en_means['unique_words_ratio']*100] , 
-                   title = '고유 단어 비율', color=['blue','skyblue'])
-    # x축, y축 레이블 추가
-    fig2.update_layout(
-        xaxis_title=f"{name}과 래퍼 113인 평균의 비교",
-        yaxis_title="사용 단어 중 흔한 단어를 제외한 비율(%)",
-        bargap=0.5
-    )
-    st.plotly_chart(fig2)
-    st.divider()
-    ##############비 속 어 분 석 #################################################################
-
-    st.write(f"➡️{name}의 영어 단어 중 욕설의 비율: {en['bad_words_ratio'].iloc[0]*100:.1f}% ({ int( en['bad_words_rank'].iloc[0]) })")
-
-    #################
-    fig3 = px.bar ( x = [name, '평균'], y = [  en['bad_words_ratio'].iloc[0]*100 , en_means['bad_words_ratio']*100] , 
-                   title = '비속어 비율', color=['blue','skyblue'])
-    # x축, y축 레이블 추가
-    fig3.update_layout(
-        xaxis_title=f"{name}과 래퍼 113인 평균의 비교",
-        yaxis_title="사용 단어 중 비속어의의 비율(%)",
-        bargap=0.5
-    )
-    st.plotly_chart(fig3)
-
-    #####################
-
-    if len ( en_top_badwords ) == 0:
-        st.write(f"{name}은(는) 최근 30곡에서 영어 비속어를 사용하지 않았습니다.")
-    else:
-        st.write(f"{name}가(이) 사용한 영어 비속어는 {', '.join(en_top_badwords)}입니다.")
+    # 워드 클라우드
+    st.subheader("🎵 영어 단어 워드 클라우드")
+    st.write(f"{name}의 영어 어휘를 빈도수를 반영하여 그린 워드 클라우드 입니다.")
 
     functions.generate_en_wordcloud(name, unique_en_counter)
+
+    # 좌표
+    st.subheader(f"🎵 {name}의 그래프에서의 위치")
+    fig4= functions.generate_en_map_byartist([name])
+    st.plotly_chart(fig4)
 
 
 #########################################################################################################
@@ -182,18 +166,19 @@ def main():
         # 텍스트 입력창에서 가수 이름 입력
         st.session_state.input_artist = st.text_input(label="검색하고 싶은 가수 이름", value=st.session_state.input_artist).upper().strip()
         
-        st.button("검색할 수 있는 가수 보기")
+        if 'show_all' not in st.session_state:
+            st.session_state.show_all = False  # 텍스트가 처음엔 안 보이게 설정
 
-        if 'show_artists' not in st.session_state:
-            st.session_state.show_artists = False  # 텍스트가 처음엔 안 보이게 설정
+        # 입력된 값이 없을 경우의 key 설정 (고유한 기본값)
+        key_for_button = "show_all_artists_button"
 
-        # 버튼 클릭 시 상태 토글
-        if st.button(f"검색할 수 있는 가수 보기"):
-            st.session_state.show_artists = not st.session_state.show_artists  # 상태 반전
+        # '검색할 수 있는 가수 보기' 버튼 클릭 시
+        if st.button(f"검색할 수 있는 가수 보기", key=key_for_button):
+            st.session_state.show_all = not st.session_state.show_all  # 상태 반전
 
         # 상태에 따라 텍스트 표시
-        if st.session_state.show_artists:
-            st.write( f"{', '.join( artist['artist_name'].sort() )}")
+        if st.session_state.show_all:
+            st.write( f"{', '.join( sorted ( list(artist['artist_name'])))}")
         else:
             pass
 
