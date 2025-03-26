@@ -120,9 +120,10 @@ def generate_en_map():
 
 
 ######################
-from PIL import Image
+from PIL import Image, ImageDraw
 import base64
 from io import BytesIO
+import plotly.graph_objects as go
 
 def resize_image(image_path, max_size=(500, 500)):
     """ 이미지 크기를 최대한 제한된 크기로 리사이즈 """
