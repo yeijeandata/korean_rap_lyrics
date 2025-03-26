@@ -173,7 +173,7 @@ def main():
 
     # '검색하고 싶은 가수가 있습니다.' 버튼 클릭 시
     if st.button("검색하고 싶은 가수가 있습니다.") or st.session_state.one_artist:
-        st.session_state.one_artist = not(st.session_state.one_artist)  # 버튼 클릭 상태를 False -> True 로 변경
+        st.session_state.one_artist = True  # 버튼 클릭 상태를 False -> True 로 변경
 
         # 텍스트 입력창에서 가수 이름 입력
         st.session_state.input_artist = st.text_input(label="검색하고 싶은 가수 이름", value=st.session_state.input_artist).upper().strip()
