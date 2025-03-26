@@ -8,11 +8,9 @@ from collections import abc
 import matplotlib.image as mpimg
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
 from PIL import Image, ImageDraw  # Pillow를 사용해서 이미지 크기 조정
-from matplotlib import font_manager, rc
+import os
 
-font_path = 'font/NanumSquareRoundB.ttf'  # Windows 예시
-font_prop = font_manager.FontProperties(fname=font_path)
-rc('font', family=font_prop.get_name())
+st.set_page_config(layout="wide")
 
 # CSV 파일 로드
 artist = pd.read_csv('analysis/artist.csv')
@@ -26,7 +24,6 @@ en_means = {
 }
 
 import functions
-
 en_stop_words = functions.en_common_words + ['hola', 'hoho', 'holla', 'leessang', 'yeh', 'vo', 'wah', 'thats', 'would', 'ru', 'ur']
 
 
@@ -231,11 +228,10 @@ def main():
             st.session_state.all_artist = True  # 버튼 클릭 상태를 True로 변경
 
             st.write("모든 가수의 데이터의 그래프를 출력합니다.")
-            st.write("영어 어휘 다양도와 비속어 비율입니다.")
 
             # 그래프 생성
             st.title("모든 래퍼 데이터")
-            fig_en = functions.generate_en_map()  # 함수 실행 후 figure 리턴 받기
-            st.pyplot(fig_en)
+            fig_en = functions.generate_en_map_plotly()  # 함수 실행 후 figure 리턴 받기
+            st.plotly_chart(fig_en)
 
 main()
