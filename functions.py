@@ -84,9 +84,6 @@ def generate_en_map():
         else:
             image_path = f"photo/{en_data['artist_name'][i]}.jpg"
 
-        if not os.path.exists(image_path):
-            image_path = "photo/default.jpg"  # 기본 이미지 설정
-
         img = Image.open(image_path)
         img = img.resize(image_size, Image.Resampling.LANCZOS)
 
