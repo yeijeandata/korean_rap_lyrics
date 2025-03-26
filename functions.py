@@ -67,55 +67,48 @@ def generate_en_map():
     font_prop = font_manager.FontProperties(fname=font_path)
     rc('font', family=font_prop.get_name())
 
-    # 예시 데이터 (x, y 좌표)
     x = en_data['unique_words_ratio']
     y = en_data['bad_words_ratio']
 
-    # 그림 크기 설정
-    fig_en, ax = plt.subplots(figsize=(20, 20))
+    fig_en = plt.figure(figsize=(20, 20))  # 👈 plt.figure() 명시적으로 생성
 
-    # 이미지 크기 고정
+    ax = fig_en.add_subplot(111)
+
     image_size = (50, 50)
 
-    # 산점도 그리기
     ax.scatter(x, y)
 
-    # 각 점에 얼굴 이미지를 표시
     for i in range(len(x)):
-        # 각 이미지 로드
         if en_data['artist_name'][i] == 'NO:EL':
             image_path = "photo/NOEL.jpg"
         else:
             image_path = f"photo/{en_data['artist_name'][i]}.jpg"
 
-        img = Image.open(image_path) # 이미지 로드
-        img = img.resize(image_size, Image.Resampling.LANCZOS)  # 최신 리사이징 옵션
+        if not os.path.exists(image_path):
+            image_path = "photo/default.jpg"  # 기본 이미지 설정
 
-        # 이미지를 원형으로 만들기 위한 마스크 생성
-        mask = Image.new('L', image_size, 0)  # 'L' 모드는 흑백 (0은 검은색, 255는 흰색)
+        img = Image.open(image_path)
+        img = img.resize(image_size, Image.Resampling.LANCZOS)
+
+        mask = Image.new('L', image_size, 0)
         draw = ImageDraw.Draw(mask)
-        draw.ellipse((0, 0, image_size[0], image_size[1]), fill=255)  # 원형 그리기
+        draw.ellipse((0, 0, image_size[0], image_size[1]), fill=255)
 
-        # 원형 마스크를 이미지에 적용
-        img.putalpha(mask)  # 이미지에 마스크 적용 (알파 채널로 원형 부분만 보이게)
-        img = img.convert("RGBA") # 이미지를 RGB로 변환 (알파 채널 제거)
+        img.putalpha(mask)
+        img = img.convert("RGBA")
         img_arr = np.array(img)
 
-        # 알파 채널을 이용해 투명한 배경을 만들기
         img_arr[:, :, 3] = img_arr[:, :, 3] * (img_arr[:, :, 3] > 0)
 
-        # 이미지 크기 조정
-        imagebox = OffsetImage(img, zoom=1, resample= True)  # zoom 값으로 크기 조절 (0.05 정도가 적당)
-        
-        # 이미지 배치
-        ab = AnnotationBbox(imagebox, (x[i], y[i]), frameon=False)  # frameon=False로 테두리 제거
+        imagebox = OffsetImage(img, zoom=1, resample=True)
+        ab = AnnotationBbox(imagebox, (x[i], y[i]), frameon=False)
         ax.add_artist(ab)
 
-        # 가수 이름을 이미지 위에 텍스트로 표시
         ax.text(x[i], y[i] + 2.6, en_data['artist_name'][i], ha='center', fontsize=10, color='black')
 
     ax.set_xlabel('고유 단어 비율')
     ax.set_ylabel('욕설 횟수')
-    return(fig_en)
+
+    return fig_en  # 👈 fig_en을 명확히 리턴
 
 
