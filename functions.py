@@ -56,16 +56,20 @@ def generate_en_wordcloud(name, word_counter): # 단어빈도수, 제목, 색상
 ############################################################################
 
 import matplotlib.pyplot as plt
-import numpy as np
-import matplotlib.image as mpimg
 from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from matplotlib import font_manager as fm
+import os
 from PIL import Image, ImageDraw  # Pillow를 사용해서 이미지 크기 조정
-from matplotlib import font_manager, rc
+import matplotlib.image as mpimg
+import numpy as np
+
+Image.MAX_IMAGE_PIXELS = None
+
+fpath = os.path.join(os.getcwd(), "font/NanumSquareRoundB.ttf")
+prop = fm.FontProperties(fname=fpath)
+
 
 def generate_en_map():
-    font_path = 'font/NanumSquareRoundB.ttf'  # Windows 예시
-    font_prop = font_manager.FontProperties(fname=font_path)
-    rc('font', family=font_prop.get_name())
 
     x = en_data['unique_words_ratio']
     y = en_data['bad_words_ratio']
@@ -74,7 +78,7 @@ def generate_en_map():
 
     ax = fig_en.add_subplot(111)
 
-    image_size = (50, 50)
+    
 
     ax.scatter(x, y)
 
@@ -83,6 +87,10 @@ def generate_en_map():
             image_path = "photo/NOEL.jpg"
         else:
             image_path = f"photo/{en_data['artist_name'][i]}.jpg"
+
+        # 이미지 크기 줄이기
+        img = Image.open(image_path)
+        image_size = (50, 50)
 
         img = Image.open(image_path)
         img = img.resize(image_size, Image.Resampling.LANCZOS)
@@ -101,11 +109,101 @@ def generate_en_map():
         ab = AnnotationBbox(imagebox, (x[i], y[i]), frameon=False)
         ax.add_artist(ab)
 
-        ax.text(x[i], y[i] + 2.6, en_data['artist_name'][i], ha='center', fontsize=10, color='black')
+        ax.text(x[i], y[i], en_data['artist_name'][i], ha='center', fontsize=10, color='black', fontproperties=prop)
 
-    ax.set_xlabel('고유 단어 비율')
-    ax.set_ylabel('욕설 횟수')
+    ax.set_xlabel('고유 단어 비율', fontproperties=prop, fontsize = 20)
+    ax.set_ylabel('비속어 비율', fontproperties=prop, fontsize = 20)
+    ax.tick_params(axis='both', labelsize=12)  # x축, y축 눈금 크기 설정
+    ax.grid(True, which='both', linestyle='--', color='gray', linewidth=0.5)
 
     return fig_en  # 👈 fig_en을 명확히 리턴
 
+
+######################
+import base64
+from io import BytesIO
+import plotly.graph_objects as go
+from PIL import Image
+import numpy as np
+
+def generate_en_map_plotly():
+    # 데이터 불러오기 (en_data가 이미 정의되었다고 가정)
+    x = en_data['unique_words_ratio']
+    y = en_data['bad_words_ratio']
+    
+    fig = go.Figure()
+
+
+    # 이미지 삽입
+    for i in range(len(x)):
+        if en_data['artist_name'][i] == 'NO:EL':
+            image_path = "photo/NOEL.jpg"
+        else:
+            image_path = f"photo/{en_data['artist_name'][i]}.jpg"
+
+        img = Image.open(image_path)
+        image_size = (100, 100)
+
+        img = Image.open(image_path)
+        img = img.resize(image_size, Image.Resampling.LANCZOS)
+
+        mask = Image.new('L', image_size, 0)
+        draw = ImageDraw.Draw(mask)
+        draw.ellipse((0, 0, image_size[0], image_size[1]), fill=255)
+
+        img.putalpha(mask)
+
+        # 이미지를 base64로 변환
+        buffered = BytesIO()
+        img.save(buffered, format="PNG")  # 이미지를 PNG 형식으로 저장
+        img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')  # base64 인코딩
+
+        # 해당 위치에 이미지 추가
+        fig.add_trace(go.Scatter(
+            x=[x[i]],
+            y=[y[i]],
+            mode='markers+text',
+            marker=dict(
+                size=20,  # 점 크기
+                color="blue",  # 점 색상
+                opacity=0.7
+            ),
+            hovertemplate=f"{en_data['artist_name'][i]}<br>고유 단어 비율: {x[i]:.2f}<br>비속어 비율: {y[i]:.2f}<extra></extra>",
+        ))
+
+        # 이미지 삽입 위치 (x, y)
+        fig.add_layout_image(
+            dict(
+                source=f"data:image/png;base64,{img_str}",  # base64로 인코딩된 이미지 문자열
+                x=x[i],  # 이미지 위치 (x좌표)
+                y=y[i],  # 이미지 위치 (y좌표)
+                xref="x",  # x축을 기준으로 위치 지정
+                yref="y",  # y축을 기준으로 위치 지정
+                sizex=0.02,  # 이미지 크기 (x축에 대한 비율)
+                sizey=0.02,  # 이미지 크기 (y축에 대한 비율)
+                opacity=1,
+                layer="above",  # 그래프 위에 이미지 표시
+                xanchor="center",  # 이미지의 중심을 x좌표에 맞춤
+                yanchor="middle"  # 이미지의 중심을 y좌표에 맞춤
+            )
+        )
+
+    # 레이아웃 설정
+    fig.update_layout(
+        title="고유 단어 비율 vs 비속어 비율",
+        xaxis_title="고유 단어 비율",
+        yaxis_title="비속어 비율",
+        font=dict(family="NanumSquareRoundB", size=14),
+        showlegend=False,
+        plot_bgcolor="white",
+        height=2000,  # 그래프의 높이 설정
+        width=1200,   # 그래프의 너비 설정
+    )
+
+    # 격자 추가
+    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='gray')
+    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='gray')
+
+    # 그래프 출력
+    return fig
 
