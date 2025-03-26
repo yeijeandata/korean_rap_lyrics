@@ -184,15 +184,15 @@ def main():
         
         st.button("검색할 수 있는 가수 보기")
 
-        if 'show_all_artists' not in st.session_state:
-            st.session_state.show_all_artists = False  # 텍스트가 처음엔 안 보이게 설정
+        if 'show_artists' not in st.session_state:
+            st.session_state.show_artists = False  # 텍스트가 처음엔 안 보이게 설정
 
         # 버튼 클릭 시 상태 토글
         if st.button(f"검색할 수 있는 가수 보기"):
-            st.session_state.show_all_artists = not st.session_state.show_all_artists  # 상태 반전
+            st.session_state.show_artists = not st.session_state.show_artists  # 상태 반전
 
         # 상태에 따라 텍스트 표시
-        if st.session_state.show_all_artists:
+        if st.session_state.show_artists:
             st.write( f"{', '.join( artist['artist_name'].sort() )}")
         else:
             pass
@@ -234,4 +234,5 @@ def main():
             fig_en = functions.generate_en_map_plotly()  # 함수 실행 후 figure 리턴 받기
             st.plotly_chart(fig_en)
 
-main()
+if __name__ == "__main__":
+    main()
