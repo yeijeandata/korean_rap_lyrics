@@ -178,6 +178,20 @@ def main():
         # 텍스트 입력창에서 가수 이름 입력
         st.session_state.input_artist = st.text_input(label="검색하고 싶은 가수 이름", value=st.session_state.input_artist).upper().strip()
         
+        st.button("검색할 수 있는 가수 보기")
+
+        if 'show_all_artists' not in st.session_state:
+            st.session_state.show_all_artists = False  # 텍스트가 처음엔 안 보이게 설정
+
+        # 버튼 클릭 시 상태 토글
+        if st.button(f"검색할 수 있는 가수 보기", key=f"show_all_artists"):
+            st.session_state.show_all_artists = not st.session_state.show_all_artists  # 상태 반전
+
+        # 상태에 따라 텍스트 표시
+        if st.session_state.show_all_artists:
+            st.write( f"{', '.join( artist['artist_name'].sort() )}")
+        else:
+            pass
 
         # 입력된 값이 있을 경우 처리
         if st.session_state.input_artist:
@@ -210,13 +224,10 @@ def main():
             st.session_state.all_artist = True  # 버튼 클릭 상태를 True로 변경
 
             st.write("모든 가수의 데이터의 그래프를 출력합니다.")
-            st.write("한글 어휘 다양도와 비속어 사용 빈도입니다.")
+            st.write("영어 어휘 다양도와 비속어 비율입니다.")
 
             # 그래프 생성
-            st.title("Matplotlib 그래프")
-
-            # 데이터 생성
-            x = np.linspace(0, 10, 100)
-            y = np.sin(x)
+            st.title("모든 래퍼 데이터")
+            st.pyplot(functions.generate_en_map())
 
 main()
