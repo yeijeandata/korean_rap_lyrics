@@ -17,16 +17,11 @@ artist = pd.read_csv('analysis/artist.csv')
 en_data = pd.read_csv('analysis/영어_가사_토큰화.csv')
 ko_data = pd.read_csv('analysis/한글_가사_토큰화.csv')
 
-en_means = {
-'unique_words_ratio' : en_data['unique_words_ratio'].mean(),
-'bad_words_ratio': en_data['bad_words_ratio'].mean(),
-'words_cnt': en_data['words_cnt'].mean()/30
-}
-
 import functions
-en_stop_words = functions.en_common_words + ['hola', 'hoho', 'holla', 'leessang', 'yeh', 'vo', 'wah', 'thats', 'would', 'ru', 'ur']
+en_stop_words = functions.en_common_words + ['hola', 'hoho', 'holla', 'leessang', 'yeh', 'vo', 'wah', 'thats', 'would', 'ru', 'ur', 'ing']
+ko_stop_words = functions.ko_common_words
 
-
+from functions import en_means, ko_means
 
 # 페이지 제목
 st.title("🎵 국내 래퍼 가사 분석")
@@ -41,16 +36,24 @@ def print_data(name):
     index = artist['artist_name'].str.find(name)
 
     en = en_data [index != -1]
+    ko = ko_data [index != -1]
 
     from collections import Counter
     import plotly.express as px
-    # 불용어를 제외한 단어 중 고빈도 단어를 제거하고 
+
+    # 불용어를 제외한 단어 중 고빈도 단어를 제거하고 단어 뽑기
     all_en_words = [ word.strip() for word in en['tokenized_lyrics'].iloc[0].split() ]
     unique_en_words = [word for word in all_en_words if (word not in en_stop_words) & (len(word) >=2 )] # 고빈도, 불용어 제거
     unique_en_counter = Counter (unique_en_words)
     en_top_words = [ item for item, value in unique_en_counter.most_common()]
-
     en_top_badwords = []
+
+    all_ko_words = [ word.strip() for word in ko['tokenized_lyrics'].iloc[0].split() ]
+    unique_ko_words = [word for word in all_ko_words if (word not in ko_stop_words) ] # 고빈도, 불용어 제거
+    unique_ko_counter = Counter (unique_ko_words)
+    ko_top_words = [ item for item, value in unique_ko_counter.most_common()]
+    ko_top_badwords = []
+
     try:
         en_bad_words = [ word.strip() for word in en['bad_words'].iloc[0].split() ]
         bad_en_counter = Counter(en_bad_words)
@@ -59,15 +62,56 @@ def print_data(name):
         if len (en['bad_words'] ) == 0:
             en_bad_words = []
             en_top_badwords = []
+
+    try:
+        ko_bad_words = [ word.strip() for word in ko['bad_words'].iloc[0].split() ]
+        bad_ko_counter = Counter(ko_bad_words)
+        ko_top_badwords = [ item for item, value in bad_ko_counter.most_common()]
+    except:
+        if len (en['bad_words'] ) == 0:
+            ko_bad_words = []
+            ko_top_badwords = []
     
     fig_en1, fig_en2, fig_en3 = functions.get_three_graph(en, name)
+    fig_ko1, fig_ko2, fig_ko3 = functions.get_three_graph(ko, name)
     ###############################################################################################
-    ###############################################################################################
+    ################################################################################################
+    # 한국어 그래프 3개
+    st.subheader("평균과 비교하였을 때 한글 단어 분석 결과입니다.")
+    col4, col5, col6 = st.columns(3)
+    with col4:
+        st.plotly_chart(fig_ko1)
+        st.subheader("🎵 곡당 사용 한글 단어 수")
+        st.write(f"➡️ {name}은(는) 한 곡에 평균 { int(ko['words_cnt'].iloc[0]/30) }개의 한글 단어를 사용.")
+        st.write(f"➡️ 113명의 래퍼를 분석한 결과 한 곡에 평균 { int(ko_means['words_cnt']) }개의 한글 단어를 사용")
+        
 
+    with col5:
+        st.plotly_chart(fig_ko2)
+        st.subheader("🎵 흔하지 않은 단어 비율")
+        st.write(f"➡️ {name}의 고유한 한글 단어 비율: {ko['unique_words_ratio'].iloc[0]*100:.1f}% ({ int(ko['unique_words_rank'].iloc[0])}위)")
+        st.write( f"➡️ 113명의 래퍼는 평균적으로 가사에 쓴 단어 중 {ko_means['unique_words_ratio']*100:.1f}%가 고유한 단어")
+
+    with col6:
+        st.plotly_chart(fig_ko3)   
+        st.subheader("🎵 비속어 비율")
+        st.write(f"➡️ {name}의 한글 단어 중 욕설의 비율: {ko['bad_words_ratio'].iloc[0]*100:.1f}% ({ int( ko['bad_words_rank'].iloc[0]) }위)")
+
+        # 사용한 비속어가 있다면 출력
+        if len ( ko_top_badwords ) == 0:
+            st.write(f"➡️ {name}은(는) 최근 30곡에서 한글 비속어를 사용하지 않았습니다.")
+        else:
+            st.write(f"➡️ {name}가(이) 사용한 한글 비속어")
+            st.write(f"  : {', '.join(ko_top_badwords)}")
+  
+    st.divider()
+    ###############################################################################################
+    # 영어 그래프 3개 
+    st.subheader("평균과 비교하였을 때 영어 단어 분석 결과입니다.")
     col1, col2, col3 = st.columns(3)
     with col1:
         st.plotly_chart(fig_en1)
-        st.subheader("🎵 곡당 사용 단어 수")
+        st.subheader("🎵 곡당 사용 영어 단어 수")
         st.write(f"➡️ {name}은(는) 한 곡에 평균 { int(en['words_cnt'].iloc[0]/30) }개의 영어 단어를 사용.")
         st.write(f"➡️ 113명의 래퍼를 분석한 결과 한 곡에 평균 { int(en_means['words_cnt']) }개의 영어 단어를 사용")
         
@@ -95,53 +139,116 @@ def print_data(name):
     #############고 유 단 어 분 석 ################################################################
 
     st.header("🎵 공통적으로 흔하게 사용한 단어")
-    st.write(f"113명의 래퍼를 분석한 결과 가장 흔하게 사용한 20개의 영어 단어는 다음과 같습니다.")
-    st.write(f"{ ', '.join(functions.en_common_words[:20])}")
+    col1, col2 = st.columns(2)
 
-    if 'show_1' not in st.session_state:
-        st.session_state.show_1 = False  # 텍스트가 처음엔 안 보이게 설정
+    with col1:
+        st.subheader("한글 어휘")
+        st.write(f"113명의 래퍼가 가장 흔하게 사용한 20개의 한글 단어")
+        st.write(f"{ ', '.join(functions.ko_common_words[:20])}")
 
-    # 버튼 클릭 시 상태 토글
-    if st.button("흔하게 사용한 단어 200개 더보기", key=f"button1_{name}"):
-        st.session_state.show_1 = not st.session_state.show_1  # 상태 반전
+        if 'show_10' not in st.session_state:
+            st.session_state.show_10 = False  # 텍스트가 처음엔 안 보이게 설정
 
-    # 상태에 따라 텍스트 표시
-    if st.session_state.show_1:
-        st.write( f"{', '.join(functions.en_common_words)}")
-    else:
-        pass
+        # 버튼 클릭 시 상태 토글
+        if st.button("흔하게 사용한 단어 200개 더보기", key=f"button10_{name}"):
+            st.session_state.show_10 = not st.session_state.show_10  # 상태 반전
+
+        # 상태에 따라 텍스트 표시
+        if st.session_state.show_10:
+            st.write( f"{', '.join(functions.ko_common_words)}")
+        else:
+            pass
+
+    with col2:
+        st.subheader("영어 어휘")
+        st.write(f"113명의 래퍼가 가장 흔하게 사용한 20개의 영어 단어")
+        st.write(f"{ ', '.join(functions.en_common_words[:20])}")
+
+        if 'show_1' not in st.session_state:
+            st.session_state.show_1 = False  # 텍스트가 처음엔 안 보이게 설정
+
+        # 버튼 클릭 시 상태 토글
+        if st.button("흔하게 사용한 단어 200개 더보기", key=f"button1_{name}"):
+            st.session_state.show_1 = not st.session_state.show_1  # 상태 반전
+
+        # 상태에 따라 텍스트 표시
+        if st.session_state.show_1:
+            st.write( f"{', '.join(functions.en_common_words)}")
+        else:
+            pass
+
 
     st.header(f"🎵 {name}의 단어")
-    st.write(f"공통적으로 흔하게 사용한 200개의 영어 단어를 제외하고")
-    st.write(f"{name}가(이) 고유하게 사용한 단어 중 빈도수 상위 20개 단어는 다음과 같습니다.")
-    st.write(f"{', '.join(en_top_words[:20])}")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("한글 어휘")
+        st.write(f"공통적으로 흔하게 사용한 200개의 한글 단어를 제외하고")
+        st.write(f"{name}가(이) 고유하게 사용한 단어 중 빈도수 상위 20개 단어는 다음과 같습니다.")
+        st.write(f"{', '.join(ko_top_words[:20])}")
 
-    if 'show_2' not in st.session_state:
-        st.session_state.show_2 = False  # 텍스트가 처음엔 안 보이게 설정
+        if 'show_20' not in st.session_state:
+            st.session_state.show_20 = False  # 텍스트가 처음엔 안 보이게 설정
 
-    # 버튼 클릭 시 상태 토글
-    if st.button(f"{name}가(이) 사용한 고유 단어 더보기", key=f"button2_{name}"):
-        st.session_state.show_2 = not st.session_state.show_2  # 상태 반전
+        # 버튼 클릭 시 상태 토글
+        if st.button(f"{name}가(이) 사용한 고유 단어 더보기", key=f"button20_{name}"):
+            st.session_state.show_20 = not st.session_state.show_20  # 상태 반전
 
-    # 상태에 따라 텍스트 표시
-    if st.session_state.show_2:
-        st.write( f"{', '.join(en_top_words)}")
-    else:
-        pass
+        # 상태에 따라 텍스트 표시
+        if st.session_state.show_20:
+            st.write( f"{', '.join(ko_top_words)}")
+        else:
+            pass
+        
+
+    with col2:
+        st.subheader("영어 어휘")
+        st.write(f"공통적으로 흔하게 사용한 200개의 영어 단어를 제외하고")
+        st.write(f"{name}가(이) 고유하게 사용한 단어 중 빈도수 상위 20개 단어는 다음과 같습니다.")
+        st.write(f"{', '.join(en_top_words[:20])}")
+
+        if 'show_2' not in st.session_state:
+            st.session_state.show_2 = False  # 텍스트가 처음엔 안 보이게 설정
+
+        # 버튼 클릭 시 상태 토글
+        if st.button(f"{name}가(이) 사용한 고유 단어 더보기", key=f"button2_{name}"):
+            st.session_state.show_2 = not st.session_state.show_2  # 상태 반전
+
+        # 상태에 따라 텍스트 표시
+        if st.session_state.show_2:
+            st.write( f"{', '.join(en_top_words)}")
+        else:
+            pass
+
 
     st.divider()
 
+    #################################################################################
     # 워드 클라우드
-    st.subheader("🎵 영어 단어 워드 클라우드")
-    st.write(f"{name}의 영어 어휘를 빈도수를 반영하여 그린 워드 클라우드 입니다.")
+    
+    col1, col2 = st.columns(2)
+    with col1:
+        st.subheader("🎵 한글 단어 워드 클라우드")
+        st.write(f"{name}의 한글 어휘를 빈도수를 반영하여 그린 워드 클라우드 입니다.")
+        functions.generate_en_wordcloud(unique_ko_counter, 'Reds')
 
-    functions.generate_en_wordcloud(unique_en_counter)
+    with col2:
+        st.subheader("🎵 영어 단어 워드 클라우드")
+        st.write(f"{name}의 영어 어휘를 빈도수를 반영하여 그린 워드 클라우드 입니다.")
+        functions.generate_en_wordcloud(unique_en_counter, 'Greens')
 
+
+
+    ###########################################################################
     # 좌표
-    st.subheader(f"🎵 {name}의 그래프에서의 위치")
-    fig4= functions.generate_en_map_byartist([name])
+    st.header(f"🎵 {name}의 그래프에서의 위치")
+
+    st.subheader("한글 어휘")
+    fig4= functions.generate_map_byartist('k', [name])
     st.plotly_chart(fig4)
 
+    st.subheader("영어 어휘")
+    fig5= functions.generate_map_byartist('e', [name])
+    st.plotly_chart(fig5)
 
 #########################################################################################################
 
@@ -216,9 +323,16 @@ def main():
             # 그래프 생성
             st.title("모든 래퍼 데이터")
             st.write("113명 래퍼의 데이터의 그래프를 출력합니다.")
-            st.wirte("영어 가사 분석 결과입니다.")
-            fig_en = functions.generate_en_map_byartist( list (artist['artist_name']) ) # 함수 실행 후 figure 리턴 받기
+
+            st.subheader("한글 가사 분석 결과입니다.")
+            fig_ko = functions.generate_map_byartist( "k", list (artist['artist_name']) ) # 함수 실행 후 figure 리턴 받기
+            st.plotly_chart(fig_ko)
+
+            st.subheader("영어 가사 분석 결과입니다.")
+            fig_en = functions.generate_map_byartist( 'e', list (artist['artist_name']) ) # 함수 실행 후 figure 리턴 받기
             st.plotly_chart(fig_en)
+
+
 
 if __name__ == "__main__":
     main()
