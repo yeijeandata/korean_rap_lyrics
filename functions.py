@@ -2,36 +2,64 @@ import streamlit as st
 import matplotlib.pyplot as plt
 from wordcloud import WordCloud
 import pandas as pd
-from PIL import Image
 from collections import abc
 import numpy as np
 
+from matplotlib.offsetbox import OffsetImage, AnnotationBbox
+from matplotlib import font_manager as fm
+import os
+from PIL import Image, ImageDraw  # Pillow를 사용해서 이미지 크기 조정
+import matplotlib.image as mpimg
+
+import base64
+from io import BytesIO
+import plotly.graph_objects as go
+import plotly.express as px
+
 ##################################################################################
 with open('analysis/고빈도_영어단어_200.txt', 'r', encoding='utf-8') as file:
-    content = file.read()
+    content1 = file.read()
 
-en_common_words = [ word.strip() for word in content.split() ]
+en_common_words = [ word.strip() for word in content1.split() ]
+
+with open('analysis/고빈도_한글단어_200.txt', 'r', encoding='utf-8') as file:
+    content2 = file.read()
+
+ko_common_words = [ word.strip() for word in content2.split() ]
 
 ##################################################################################
+# 필요한 데이터 불러오기
 artist = pd.read_csv('analysis/artist.csv')
 en_data = pd.read_csv('analysis/영어_가사_토큰화.csv')
 ko_data = pd.read_csv('analysis/한글_가사_토큰화.csv')
 
-
+# 평균값 계산
 en_means = {
 'unique_words_ratio' : en_data['unique_words_ratio'].mean(),
 'bad_words_ratio': en_data['bad_words_ratio'].mean(),
 'words_cnt': en_data['words_cnt'].mean()/30
 }
 
-###################################
-def make_list (df, column): 
+ko_means = {
+'unique_words_ratio' : ko_data['unique_words_ratio'].mean(),
+'bad_words_ratio': ko_data['bad_words_ratio'].mean(),
+'words_cnt': ko_data['words_cnt'].mean()/30
+}
+
+###########################################################
+def make_list (df, column, n=2): 
+    # df 데이터 프레임의 column 의 정보를 공백 단위로 잘라서 리스트로 만들어 반환하는데, 단어는 n글자 이상만 포함
     tokenized_lyrics = []
     for text in df[column]:
-        word_list = [  word.strip() for word in text.split() if len(word.strip())>=2]
+        word_list = [  word.strip() for word in text.split() if len(word.strip())>=n]
         tokenized_lyrics.append(word_list)
+    return(tokenized_lyrics)
 
-def generate_en_wordcloud(name, word_counter): # 단어빈도수, 제목, 색상맵
+###########################################################
+# 워드 클라우드
+###########################################################
+
+def generate_en_wordcloud(word_counter): # 단어빈도수, 제목, 색상맵
     import numpy as np
     font_path = 'font/NanumSquareRoundB.ttf' # 한글 폰트 경로
     mask_path = "photo/mask.png"  # 상대 경로 사용
@@ -60,97 +88,41 @@ def generate_en_wordcloud(name, word_counter): # 단어빈도수, 제목, 색상
         st.pyplot(plt, use_container_width=False)
 
 ############################################################################
-
-import matplotlib.pyplot as plt
-from matplotlib.offsetbox import OffsetImage, AnnotationBbox
-from matplotlib import font_manager as fm
-import os
-from PIL import Image, ImageDraw  # Pillow를 사용해서 이미지 크기 조정
-import matplotlib.image as mpimg
-import numpy as np
-
+# 얼굴 넣은 맵 그리기
+###########################################################################
 Image.MAX_IMAGE_PIXELS = None
 
 fpath = os.path.join(os.getcwd(), "font/NanumSquareRoundB.ttf")
 prop = fm.FontProperties(fname=fpath)
 
+##########################################################################
+# artist_names에는 리스트 형태로 가수 이름을 넣습니다. (ex: ['Crush', 리쌍])
 
-def generate_en_map():
-
-    x = en_data['unique_words_ratio']
-    y = en_data['bad_words_ratio']
-
-    fig_en = plt.figure(figsize=(30, 30))  # 👈 plt.figure() 명시적으로 생성
-
-    ax = fig_en.add_subplot(111)
-
-    
-
-    ax.scatter(x, y)
-
-    for i in range(len(x)):
-        if en_data['artist_name'][i] == 'NO:EL':
-            image_path = "photo/NOEL.jpg"
-        else:
-            image_path = f"photo/{en_data['artist_name'][i]}.jpg"
-
-        # 이미지 크기 줄이기
-        img = Image.open(image_path)
-        image_size = (50, 50)
-
-        img = Image.open(image_path)
-        img = img.resize(image_size, Image.Resampling.LANCZOS)
-
-        mask = Image.new('L', image_size, 0)
-        draw = ImageDraw.Draw(mask)
-        draw.ellipse((0, 0, image_size[0], image_size[1]), fill=255)
-
-        img.putalpha(mask)
-        img = img.convert("RGBA")
-        img_arr = np.array(img)
-
-        img_arr[:, :, 3] = img_arr[:, :, 3] * (img_arr[:, :, 3] > 0)
-
-        imagebox = OffsetImage(img, zoom=1, resample=True)
-        ab = AnnotationBbox(imagebox, (x[i], y[i]), frameon=False)
-        ax.add_artist(ab)
-
-        ax.text(x[i], y[i], en_data['artist_name'][i], ha='center', fontsize=10, color='black', fontproperties=prop)
-
-    ax.set_xlabel('고유 단어 비율', fontproperties=prop, fontsize = 20)
-    ax.set_ylabel('비속어 비율', fontproperties=prop, fontsize = 20)
-    ax.tick_params(axis='both', labelsize=12)  # x축, y축 눈금 크기 설정
-    ax.grid(True, which='both', linestyle='--', color='gray', linewidth=0.5)
-
-    return fig_en  # 👈 fig_en을 명확히 리턴
-
-
-#######################################################################
-from PIL import Image, ImageDraw
-import base64
-from io import BytesIO
-import plotly.graph_objects as go
-
-
-def generate_en_map_plotly():
+def generate_en_map_byartist(artist_names):
     # 데이터 불러오기 (en_data가 이미 정의되었다고 가정)
-    x = en_data['unique_words_ratio']
-    y = en_data['bad_words_ratio']
+    artist_names = list (set (artist_names + ['빈첸', '원써겐', '식케이'] ))
+
+    wanted_data = en_data.loc[ en_data['artist_name'].isin(artist_names), : ].reset_index(drop=True)
     
     fig = go.Figure()
 
     # 이미지 삽입
-    for i in range(len(x)):
-        if en_data['artist_name'][i] == 'NO:EL':
+    for i, row in wanted_data.iterrows():
+
+        artist_name = row['artist_name']
+        if artist_name == 'NO:EL':
             image_path = "photo/NOEL.jpg"
         else:
-            image_path = f"photo/{en_data['artist_name'][i]}.jpg"
+            image_path = f"photo/{artist_name}.jpg"
 
         # 이미지 리사이징
-        img = Image.open(image_path)
-        image_size = (50, 50)  # 이미지 크기 설정
-        img = img.resize( image_size , resample=Image.Resampling.LANCZOS)
-
+        try: 
+            img = Image.open(image_path)
+        except:
+            print("이미지를 찾을 수 없습니다.")
+        image_size = (50, 50)
+        img = img.resize(image_size, resample=Image.Resampling.LANCZOS)
+        
         # 이미지를 원형으로 자르기
         mask = Image.new('L', image_size, 0)  # 'L' 모드는 흑백 이미지
         draw = ImageDraw.Draw(mask)
@@ -163,30 +135,30 @@ def generate_en_map_plotly():
         buffered = BytesIO()
         img.save(buffered, format="PNG")  # 이미지를 PNG 형식으로 저장
         img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')  # base64로 변환
-
+        print(img_str)
         # 해당 위치에 이미지 추가
         fig.add_trace(go.Scatter(
-            x=[x[i]],
-            y=[y[i]],
+            x=[row['unique_words_ratio'] * 100],
+            y=[row['bad_words_ratio'] * 100],
             mode='markers+text',
             marker=dict(
                 size=20,  # 점 크기
                 color="blue",  # 점 색상
                 opacity=0.7
             ),
-            hovertemplate=f"{en_data['artist_name'][i]}<br>고유 단어 비율: {x[i]:.2f}<br>비속어 비율: {y[i]:.2f}<extra></extra>",
+            hovertemplate=f"{artist_name}<br>고유 단어 비율: {row['unique_words_ratio'] * 100:.2f}<br>비속어 비율: {row['bad_words_ratio'] * 100:.2f}<extra></extra>",
         ))
 
         # 이미지 삽입 위치 (x, y)
         fig.add_layout_image(
             dict(
                 source=f"data:image/png;base64,{img_str}",  # base64로 인코딩된 이미지 문자열
-                x=x[i],  # 이미지 위치 (x좌표)
-                y=y[i],  # 이미지 위치 (y좌표)
+                x=row['unique_words_ratio'] * 100,  # 이미지 위치 (x좌표)
+                y=row['bad_words_ratio'] * 100,  # 이미지 위치 (y좌표)
                 xref="x",  # x축을 기준으로 위치 지정
                 yref="y",  # y축을 기준으로 위치 지정
-                sizex=0.02,  # 이미지 크기 (x축에 대한 비율)
-                sizey=0.02,  # 이미지 크기 (y축에 대한 비율)
+                sizex=2,  # 이미지 크기 (x축에 대한 비율)
+                sizey=2,  # 이미지 크기 (y축에 대한 비율)
                 opacity=1,
                 layer="above",  # 그래프 위에 이미지 표시
                 xanchor="center",  # 이미지의 중심을 x좌표에 맞춤
@@ -194,17 +166,54 @@ def generate_en_map_plotly():
             )
         )
 
+
+        # 평균 값을 표시하는 점 추가
+        fig.add_trace(go.Scatter(
+            x=[en_means['unique_words_ratio']*100],
+            y=[en_means['bad_words_ratio']*100],
+            mode='markers+text',
+            marker=dict(
+                size=30,  # 평균 값 점 크기
+                color="skyblue",  # 평균 값을 하늘색으로 표시
+                opacity=0.5
+            ),
+            text="Average",
+            textposition="bottom center",
+            hovertemplate=f"평균 고유 단어 비율: {en_means['unique_words_ratio']*100:.2f}<br>평균 비속어 비율: {en_means['bad_words_ratio']*100:.2f}<extra></extra>",
+        ))
+
     # 레이아웃 설정
     fig.update_layout(
         title="고유 단어 비율 vs 비속어 비율",
-        xaxis_title="고유 단어 비율",
-        yaxis_title="비속어 비율",
+        xaxis_title="고유 단어 비율(%)",
+        yaxis_title="비속어 비율(%)",
         font=dict(family="NanumSquareRoundB", size=14),
         showlegend=False,
         plot_bgcolor="white",
-        height=1200,  # 그래프의 높이 설정
-        width=1200,   # 그래프의 너비 설정
+        height=1000,  # 그래프의 높이 설정
+        width=1000,   # 그래프의 너비 설정
+        xaxis=dict(
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='gray',
+        zeroline=True,
+        zerolinewidth=2,  # x축 0선 굵기 설정
+        showline=True,
+        linewidth=2,  # x축 선 굵기 설정
+        linecolor='black'  # x축 선 색상 설정
+        ),
+        yaxis=dict(
+        showgrid=True,
+        gridwidth=1,
+        gridcolor='gray',
+        zeroline=True,
+        zerolinewidth=2,  # y축 0선 굵기 설정
+        showline=True,
+        linewidth=2,  # y축 선 굵기 설정
+        linecolor='black'  # y축 선 색상 설정
+        )
     )
+
 
     # 격자 추가
     fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='gray')
@@ -212,12 +221,8 @@ def generate_en_map_plotly():
 
     # 그래프 출력
     return fig
-
-
 ##################
-import plotly.express as px
-
-
+# 
 
 def get_three_graph(en, name):
 
@@ -255,102 +260,3 @@ def get_three_graph(en, name):
     return (fig1, fig2, fig3)
 
 ###############
-
-def generate_en_map_byartist(artist_names):
-    # 데이터 불러오기 (en_data가 이미 정의되었다고 가정)
-    artist_names = artist_names + ['빈첸', '원써겐', '식케이']
-    x = en_data.loc[ en_data['artist_name'].isin(artist_names), 'unique_words_ratio']
-    y = en_data.loc[ en_data['artist_name'].isin(artist_names), 'bad_words_ratio']
-    
-    fig = go.Figure()
-
-    # 이미지 삽입
-    for i in range(len(x)):
-        if artist_names[i] == 'NO:EL':
-            image_path = "photo/NOEL.jpg"
-        else:
-            image_path = f"photo/{artist_names[i]}.jpg"
-
-        # 이미지 리사이징
-        img = Image.open(image_path)
-        image_size = (50, 50)
-        img = img.resize( image_size , resample=Image.Resampling.LANCZOS)
-        
-
-
-        # 이미지를 원형으로 자르기
-        mask = Image.new('L', image_size, 0)  # 'L' 모드는 흑백 이미지
-        draw = ImageDraw.Draw(mask)
-        draw.ellipse((0, 0, image_size[0], image_size[1]), fill=255)  # 원형 그리기
-
-        # 원형 마스크를 이미지에 적용
-        img.putalpha(mask)  # alpha 채널을 적용하여 원형 이미지 생성
-
-        # 이미지를 base64로 변환
-        buffered = BytesIO()
-        img.save(buffered, format="PNG")  # 이미지를 PNG 형식으로 저장
-        img_str = base64.b64encode(buffered.getvalue()).decode('utf-8')  # base64로 변환
-
-        # 해당 위치에 이미지 추가
-        fig.add_trace(go.Scatter(
-            x=[x.iloc[i]*100],
-            y=[y.iloc[i]*100],
-            mode='markers+text',
-            marker=dict(
-                size=20,  # 점 크기
-                color="blue",  # 점 색상
-                opacity=0.7
-            ),
-            hovertemplate=f"{artist_names[i]}<br>고유 단어 비율: {x.iloc[i]*100:.2f}<br>비속어 비율: {y.iloc[i]*100:.2f}<extra></extra>",
-        ))
-
-        # 이미지 삽입 위치 (x, y)
-        fig.add_layout_image(
-            dict(
-                source=f"data:image/png;base64,{img_str}",  # base64로 인코딩된 이미지 문자열
-                x=x.iloc[i]*100,  # 이미지 위치 (x좌표)
-                y=y.iloc[i]*100,  # 이미지 위치 (y좌표)
-                xref="x",  # x축을 기준으로 위치 지정
-                yref="y",  # y축을 기준으로 위치 지정
-                sizex=0.01,  # 이미지 크기 (x축에 대한 비율)
-                sizey=0.01,  # 이미지 크기 (y축에 대한 비율)
-                opacity=1,
-                layer="above",  # 그래프 위에 이미지 표시
-                xanchor="center",  # 이미지의 중심을 x좌표에 맞춤
-                yanchor="middle"  # 이미지의 중심을 y좌표에 맞춤
-            )
-        )
-
-    # 평균 값을 표시하는 점 추가
-    fig.add_trace(go.Scatter(
-        x=[en_means['unique_words_ratio']*100],
-        y=[en_means['bad_words_ratio']*100],
-        mode='markers+text',
-        marker=dict(
-            size=30,  # 평균 값 점 크기
-            color="red",  # 평균 값을 빨간색으로 표시
-            opacity=0.7
-        ),
-        text="Average",
-        textposition="bottom center",
-        hovertemplate=f"평균 고유 단어 비율: {en_means['unique_words_ratio']*100:.2f}<br>평균 비속어 비율: {en_means['bad_words_ratio']*100:.2f}<extra></extra>",
-    ))
-
-    # 레이아웃 설정
-    fig.update_layout(
-        title="고유 단어 비율 vs 비속어 비율",
-        xaxis_title="고유 단어 비율",
-        yaxis_title="비속어 비율",
-        font=dict(family="NanumSquareRoundB", size=14),
-        showlegend=False,
-        plot_bgcolor="white",
-        height=1200,  # 그래프의 높이 설정
-        width=1200   # 그래프의 너비 설정
-    )
-
-    # 격자 추가
-    fig.update_xaxes(showgrid=True, gridwidth=1, gridcolor='gray')
-    fig.update_yaxes(showgrid=True, gridwidth=1, gridcolor='gray')
-
-    # 그래프 출력
-    return fig
