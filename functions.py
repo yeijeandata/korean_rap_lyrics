@@ -59,7 +59,7 @@ def make_list (df, column, n=2):
 # 워드 클라우드
 ###########################################################
 
-def generate_en_wordcloud(word_counter): # 단어빈도수, 제목, 색상맵
+def generate_en_wordcloud(word_counter, color): # 단어빈도수, 제목, 색상맵
     import numpy as np
     font_path = 'font/NanumSquareRoundB.ttf' # 한글 폰트 경로
     mask_path = "photo/mask.png"  # 상대 경로 사용
@@ -72,7 +72,7 @@ def generate_en_wordcloud(word_counter): # 단어빈도수, 제목, 색상맵
         font_path=font_path, # 폰트 경로
         background_color='white', # 배경색
         max_words=100, # 최대 단어 수
-        colormap='Greens', # 색상맵
+        colormap=color, # 색상맵
         width=300, # 너비
         height=300, # 높이
         mask = mask_image # 불용어 
@@ -98,11 +98,22 @@ prop = fm.FontProperties(fname=fpath)
 ##########################################################################
 # artist_names에는 리스트 형태로 가수 이름을 넣습니다. (ex: ['Crush', 리쌍])
 
-def generate_en_map_byartist(artist_names):
-    # 데이터 불러오기 (en_data가 이미 정의되었다고 가정)
-    artist_names = list (set (artist_names + ['빈첸', '원써겐', '식케이'] ))
+def generate_map_byartist(language, artist_names):
+    
+    if language == 'k':
+        data = ko_data
+        means = ko_means
+        size = 1
+        artist_names = list (set (artist_names + ['Don Mills', '허클베리피', 'Yuzion', '원슈타인'] ))
 
-    wanted_data = en_data.loc[ en_data['artist_name'].isin(artist_names), : ].reset_index(drop=True)
+    elif language == 'e':
+        data = en_data
+        means = en_means
+        size = 2
+        artist_names = list (set (artist_names + ['빈첸', '원써겐', '식케이'] ))
+
+    # 데이터 불러오기
+    wanted_data = data.loc[ data['artist_name'].isin(artist_names), : ].reset_index(drop=True)
     
     fig = go.Figure()
 
@@ -149,6 +160,7 @@ def generate_en_map_byartist(artist_names):
             hovertemplate=f"{artist_name}<br>고유 단어 비율: {row['unique_words_ratio'] * 100:.2f}<br>비속어 비율: {row['bad_words_ratio'] * 100:.2f}<extra></extra>",
         ))
 
+
         # 이미지 삽입 위치 (x, y)
         fig.add_layout_image(
             dict(
@@ -157,8 +169,8 @@ def generate_en_map_byartist(artist_names):
                 y=row['bad_words_ratio'] * 100,  # 이미지 위치 (y좌표)
                 xref="x",  # x축을 기준으로 위치 지정
                 yref="y",  # y축을 기준으로 위치 지정
-                sizex=2,  # 이미지 크기 (x축에 대한 비율)
-                sizey=2,  # 이미지 크기 (y축에 대한 비율)
+                sizex=size,  # 이미지 크기 (x축에 대한 비율)
+                sizey=size,  # 이미지 크기 (y축에 대한 비율)
                 opacity=1,
                 layer="above",  # 그래프 위에 이미지 표시
                 xanchor="center",  # 이미지의 중심을 x좌표에 맞춤
@@ -169,8 +181,8 @@ def generate_en_map_byartist(artist_names):
 
         # 평균 값을 표시하는 점 추가
         fig.add_trace(go.Scatter(
-            x=[en_means['unique_words_ratio']*100],
-            y=[en_means['bad_words_ratio']*100],
+            x=[means['unique_words_ratio']*100],
+            y=[means['bad_words_ratio']*100],
             mode='markers+text',
             marker=dict(
                 size=30,  # 평균 값 점 크기
@@ -179,9 +191,11 @@ def generate_en_map_byartist(artist_names):
             ),
             text="Average",
             textposition="bottom center",
-            hovertemplate=f"평균 고유 단어 비율: {en_means['unique_words_ratio']*100:.2f}<br>평균 비속어 비율: {en_means['bad_words_ratio']*100:.2f}<extra></extra>",
+            hovertemplate=f"평균 고유 단어 비율: {means['unique_words_ratio']*100:.2f}<br>평균 비속어 비율: {means['bad_words_ratio']*100:.2f}<extra></extra>",
         ))
 
+
+        
     # 레이아웃 설정
     fig.update_layout(
         title="고유 단어 비율 vs 비속어 비율",
@@ -193,24 +207,24 @@ def generate_en_map_byartist(artist_names):
         height=1000,  # 그래프의 높이 설정
         width=1000,   # 그래프의 너비 설정
         xaxis=dict(
-        showgrid=True,
-        gridwidth=1,
-        gridcolor='gray',
-        zeroline=True,
-        zerolinewidth=2,  # x축 0선 굵기 설정
-        showline=True,
-        linewidth=2,  # x축 선 굵기 설정
-        linecolor='black'  # x축 선 색상 설정
+            showgrid=True,
+            gridwidth=1,
+            gridcolor='gray',
+            zeroline=True,
+            zerolinewidth=2,  # x축 0선 굵기 설정
+            showline=True,
+            linewidth=2,  # x축 선 굵기 설정
+            linecolor='black'  # x축 선 색상 설정
         ),
         yaxis=dict(
-        showgrid=True,
-        gridwidth=1,
-        gridcolor='gray',
-        zeroline=True,
-        zerolinewidth=2,  # y축 0선 굵기 설정
-        showline=True,
-        linewidth=2,  # y축 선 굵기 설정
-        linecolor='black'  # y축 선 색상 설정
+            showgrid=True,
+            gridwidth=1,
+            gridcolor='gray',
+            zeroline=True,
+            zerolinewidth=2,  # y축 0선 굵기 설정
+            showline=True,
+            linewidth=2,  # y축 선 굵기 설정
+            linecolor='black'  # y축 선 색상 설정
         )
     )
 
@@ -228,11 +242,11 @@ def get_three_graph(en, name):
 
     # 단어 수 그래프
     fig1 = px.bar ( x = [name, '평균'], y = [  int(en['words_cnt'].iloc[0]/30) , int(en_means['words_cnt'])] , 
-                   title = '한 곡의 평균 영어 단어 수', color=['blue','skyblue'])
+                   title = '한 곡의 평균 단어 수', color=['blue','skyblue'])
     # x축, y축 레이블 추가
     fig1.update_layout(
         xaxis_title=f"{name}과 래퍼 113인 평균의 비교",
-        yaxis_title="한 곡의 평균 영어 단어 수",
+        yaxis_title="한 곡의 평균 단어 수",
         bargap=0.5
     )
 
