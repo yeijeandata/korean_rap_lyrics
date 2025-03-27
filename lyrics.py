@@ -81,14 +81,14 @@ def print_data(name):
     with col3:
         st.plotly_chart(fig_en3)   
         st.subheader("🎵 비속어 비율")
-        st.write(f"➡️ {name}의 영어 단어 중 욕설의 비율: {en['bad_words_ratio'].iloc[0]*100:.1f}% ({ int( en['bad_words_rank'].iloc[0]) })")
+        st.write(f"➡️ {name}의 영어 단어 중 욕설의 비율: {en['bad_words_ratio'].iloc[0]*100:.1f}% ({ int( en['bad_words_rank'].iloc[0]) }위)")
 
         # 사용한 비속어가 있다면 출력
         if len ( en_top_badwords ) == 0:
             st.write(f"➡️ {name}은(는) 최근 30곡에서 영어 비속어를 사용하지 않았습니다.")
         else:
             st.write(f"➡️ {name}가(이) 사용한 영어 비속어")
-            st.write(f": {', '.join(en_top_badwords)}")
+            st.write(f"  : {', '.join(en_top_badwords)}")
   
     st.divider()
 
@@ -135,7 +135,7 @@ def print_data(name):
     st.subheader("🎵 영어 단어 워드 클라우드")
     st.write(f"{name}의 영어 어휘를 빈도수를 반영하여 그린 워드 클라우드 입니다.")
 
-    functions.generate_en_wordcloud(name, unique_en_counter)
+    functions.generate_en_wordcloud(unique_en_counter)
 
     # 좌표
     st.subheader(f"🎵 {name}의 그래프에서의 위치")
@@ -149,7 +149,8 @@ def print_data(name):
 def main():
     # 텍스트
     st.write("안녕하세요, 달땅 컴퍼니에서 만든 국내 래퍼 가사 분석 프로그램입니다.")
-    st.write("원하는 기능을 선택하세요.")
+    st.write("멜론에서 크롤링한 가사를 분석에 사용했습니다.")
+    st.markdown("**원하는 기능을 선택하세요.**")
 
     # 세션 상태에서 input_artist와 one_artist를 설정 (없으면 초기값 설정)
     if 'input_artist' not in st.session_state:
@@ -212,11 +213,11 @@ def main():
         if st.button("모든 가수의 분석 결과를 보고 싶습니다.") or st.session_state.all_artist:
             st.session_state.all_artist = True  # 버튼 클릭 상태를 True로 변경
 
-            st.write("모든 가수의 데이터의 그래프를 출력합니다.")
-
             # 그래프 생성
             st.title("모든 래퍼 데이터")
-            fig_en = functions.generate_en_map_plotly()  # 함수 실행 후 figure 리턴 받기
+            st.write("113명 래퍼의 데이터의 그래프를 출력합니다.")
+            st.wirte("영어 가사 분석 결과입니다.")
+            fig_en = functions.generate_en_map_byartist( list (artist['artist_name']) ) # 함수 실행 후 figure 리턴 받기
             st.plotly_chart(fig_en)
 
 if __name__ == "__main__":
